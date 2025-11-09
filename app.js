@@ -143,7 +143,7 @@ app.post("/signup", async (req, res) => {
     res.cookie("token", token, {
       httpOnly: true,
       secure: false, // local dev (no HTTPS)
-      sameSite: "lax", // ✅ send cookie on same-origin navigation + API calls
+      sameSite: "lax", // send cookie on same-origin navigation + API calls
       maxAge: 60 * 60 * 1000,
     });
 
@@ -186,7 +186,7 @@ app.post("/login", async (req, res) => {
     res.cookie("token", token, {
       httpOnly: true,
       secure: false, // local dev (no HTTPS)
-      sameSite: "lax", // ✅ send cookie on same-origin navigation + API calls
+      sameSite: "lax", // send cookie on same-origin navigation + API calls
       maxAge: 60 * 60 * 1000,
     });
 
@@ -271,7 +271,7 @@ app.get("/posts", isLoggedIn, async (req, res) => {
 
 app.get("/posts/:id", isLoggedIn, async (req, res) => {
   try {
-    const postId = req.params.id;
+    const postId = req.params.postId;
     // find by postId (Scan). If your table has queryable keys, replace with Query.
     const postsData = await docClient.send(
       new ScanCommand({
@@ -400,10 +400,7 @@ app.delete("/posts/:id", isLoggedIn, async (req, res) => {
     if (item.ownerEmail !== req.user.email)
       return res.status(403).json({ error: "Not authorized" });
 
-    // If an image exists and you want to delete from S3, do it here:
-    // extract key from the stored URL (if you saved the S3 key or can parse it)
-    // Example: if image.url contains the full public URL, parse Key from it
-    // (We skip S3 deletion here to keep it simple; add if desired.)
+    // *** delete from S3 ***
 
     const key = item.createdAt
       ? { postId: item.postId, createdAt: item.createdAt }
@@ -424,25 +421,26 @@ app.delete("/posts/:id", isLoggedIn, async (req, res) => {
 });
 
 // Search posts (simple scan + filter)
-app.get("/posts/search", isLoggedIn, async (req, res) => {
-  try {
-    const query = req.query.q?.toLowerCase() || "";
-    const postsData = await docClient.send(
-      new ScanCommand({ TableName: "Posts" })
-    );
 
-    const posts = (postsData.Items || []).filter((p) =>
-      String(p.content || "")
-        .toLowerCase()
-        .includes(query)
-    );
+// app.get("/posts/search", isLoggedIn, async (req, res) => {
+//   try {
+//     const query = req.query.q?.toLowerCase() || "";
+//     const postsData = await docClient.send(
+//       new ScanCommand({ TableName: "Posts" })
+//     );
 
-    res.json(posts);
-  } catch (err) {
-    console.error("Search posts error:", err);
-    res.status(500).json({ error: err.message });
-  }
-});
+//     const posts = (postsData.Items || []).filter((p) =>
+//       String(p.content || "")
+//         .toLowerCase()
+//         .includes(query)
+//     );
+
+//     res.json(posts);
+//   } catch (err) {
+//     console.error("Search posts error:", err);
+//     res.status(500).json({ error: err.message });
+//   }
+// });
 
 // // ---------------- COMMENT ROUTES ----------------
 // app.post("/posts/:id/comment", isLoggedIn, async (req, res) => {
@@ -500,4 +498,4 @@ app.get("/posts/search", isLoggedIn, async (req, res) => {
 // });
 
 // ---------------- Start Server ----------------
-app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
